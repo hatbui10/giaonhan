@@ -57,21 +57,29 @@
             background-color: #fff;
         }
         .btn-container {
+            display: flex;
+            gap: 10px;
             margin-bottom: 15px;
         }
         button {
-            background-color: #007bff;
-            color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 12px 15px;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
             font-size: 14px;
-            width: 100%;
+            flex: 1;
         }
-        button:hover {
-            background-color: #0056b3;
+        .btn-add {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-copy {
+            background-color: #28a745;
+            color: white;
+        }
+        button:active {
+            opacity: 0.8;
         }
         .table-responsive {
             overflow-x: auto;
@@ -116,11 +124,11 @@
 
     <div class="row-info">
         <div class="form-group">
-            <label for="nguoi_giao">Người giao:</label>
+            <label for="nguoi_giao">Người lấy:</label>
             <select id="nguoi_giao"></select>
         </div>
         <div class="form-group">
-            <label for="nguoi_nhan">Người nhận:</label>
+            <label for="nguoi_nhan">Người trả:</label>
             <select id="nguoi_nhan"></select>
         </div>
     </div>
@@ -133,19 +141,20 @@
                     <tr class="bg-giao-nhan">
                         <th style="width: 8%;">STT</th>
                         <th style="width: 30%;">Tên sản phẩm</th>
-                        <th style="width: 12%;">ĐVT</th> <th style="width: 16%;">SL Giao</th>
+                        <th style="width: 12%;">ĐVT</th>
+                        <th style="width: 16%;">SL Giao</th>
                         <th style="width: 16%;">SL Nhận</th>
                         <th style="width: 18%;">Còn nợ</th>
                     </tr>
                 </thead>
-                <tbody>
-                    </tbody>
+                <tbody></tbody>
             </table>
         </div>
     </div>
 
     <div class="btn-container">
-        <button type="button" onclick="themDong()">+ Thêm dòng sản phẩm</button>
+        <button type="button" class="btn-add" onclick="themDong()">+ Thêm dòng</button>
+        <button type="button" class="btn-copy" onclick="saoChepHaiBang()">📋 Copy nội dung gửi Zalo</button>
     </div>
 
     <div class="table-responsive">
@@ -160,8 +169,7 @@
                     <th style="width: 18%;">Thành tiền</th>
                 </tr>
             </thead>
-            <tbody>
-                </tbody>
+            <tbody></tbody>
             <tfoot>
                 <tr class="total-row">
                     <td colspan="5" class="text-right">Tổng cộng:</td>
@@ -178,7 +186,6 @@
     const danhSachNguoiGiao = ["-- Chọn người giao --", "Nguyễn Văn A", "Trần Thị B", "Lê Văn C"];
     const danhSachNguoiNhan = ["-- Chọn người nhận --", "Khách hàng X", "Khách hàng Y", "Đại lý Z"];
     
-    // Danh sách sản phẩm mặc định (Bạn có thể tự sửa tên, giá, ĐVT ở đây)
     const danhSachSanPham = [
         { ten: "-- Chọn sản phẩm --", gia: 0, dvt: "" },
         { ten: "Sản phẩm A", gia: 50000, dvt: "Cái" },
@@ -204,12 +211,10 @@
         tinhThanhTien(input);
     }
 
-    // Hàm đồng bộ cả Tên sản phẩm và ĐVT từ bảng chọn dưới lên bảng hiển thị trên
     function dongBoThongTinLenTren(selectElement, idDong) {
         const index = selectElement.value;
         const oTenTren = document.getElementById(`ten_tren_${idDong}`);
         const oDvtTren = document.getElementById(`dvt_tren_${idDong}`);
-        
         if(oTenTren && oDvtTren) {
             oTenTren.innerText = danhSachSanPham[index].ten;
             oDvtTren.innerText = danhSachSanPham[index].dvt || "---";
@@ -226,7 +231,6 @@
         let optionsHtml = "";
         danhSachSanPham.forEach((sp, index) => { optionsHtml += `<option value="${index}">${sp.ten}</option>`; });
 
-        // 1. Thêm dòng bảng tính tiền chính (Dưới)
         const rowChinh = document.createElement("tr");
         rowChinh.setAttribute("data-id", idDongTudong);
         rowChinh.innerHTML = `
@@ -243,7 +247,6 @@
         `;
         tbodyChinh.appendChild(rowChinh);
 
-        // 2. Thêm dòng hộp thông tin giao nhận (Trên)
         const rowPhu = document.createElement("tr");
         rowPhu.setAttribute("id", `dong_tren_${idDongTudong}`);
         rowPhu.innerHTML = `
@@ -260,10 +263,8 @@
     function xuLyNhapSoLuong(input, idDong) {
         input.value = input.value.replace(/\D/g, "");
         if (input.value === "") input.value = "1";
-        
         const slGiaoTren = document.getElementById(`sl_giao_${idDong}`);
         if(slGiaoTren) slGiaoTren.value = input.value;
-        
         tinhNo(idDong);
         tinhThanhTien(input);
     }
@@ -284,19 +285,14 @@
     function tinhNo(idDong) {
         const giao = parseFloat(document.getElementById(`sl_giao_${idDong}`).value) || 0;
         const nhan = parseFloat(document.getElementById(`sl_nhan_${idDong}`).value) || 0;
-        const no = giao - nhan;
-        document.getElementById(`con_no_${idDong}`).innerText = no;
+        document.getElementById(`con_no_${idDong}`).innerText = giao - nhan;
     }
 
     function capNhatThongTinTuDropdown(selectElement) {
         const index = selectElement.value;
         const row = selectElement.closest("tr");
-        const giaSanPham = danhSachSanPham[index].gia;
-        const dvtSanPham = danhSachSanPham[index].dvt;
-        
-        row.querySelector(".don-gia").value = dinhDangSo(giaSanPham);
-        row.querySelector(".don-vi-tinh").value = dvtSanPham;
-        
+        row.querySelector(".don-gia").value = dinhDangSo(danhSachSanPham[index].gia);
+        row.querySelector(".don-vi-tinh").value = danhSachSanPham[index].dvt;
         tinhThanhTien(selectElement);
     }
 
@@ -304,22 +300,85 @@
         const row = element.closest("tr");
         const soLuong = parseFloat(row.querySelector(".so-luong").value) || 0;
         const donGia = chuyenThanhSo(row.querySelector(".don-gia").value);
-        
-        const thanhTien = soLuong * donGia;
-        row.querySelector(".thanh-tien").innerText = dinhDangSo(thanhTien);
-
+        row.querySelector(".thanh-tien").innerText = dinhDangSo(soLuong * donGia);
         tinhTongCong();
     }
 
     function tinhTongCong() {
         let tong = 0;
-        const rows = document.querySelectorAll("#bang_san_pham tbody tr");
-        rows.forEach(row => {
+        document.querySelectorAll("#bang_san_pham tbody tr").forEach(row => {
             const soLuong = parseFloat(row.querySelector(".so-luong").value) || 0;
             const donGia = chuyenThanhSo(row.querySelector(".don-gia").value);
             tong += (soLuong * donGia);
         });
         document.getElementById("tong_tien").innerText = dinhDangSo(tong);
+    }
+
+    // HÀM ĐỊNH DẠNG COPY SIÊU ĐẸP CHO ZALO (ĐÃ THAY ĐỔI)
+    function saoChepHaiBang() {
+        const ngay = document.getElementById("ngay_chon").value;
+        const nguoiGiao = document.getElementById("nguoi_giao").value;
+        const nguoiNhan = document.getElementById("nguoi_nhan").value;
+
+        let vanBan = `====== 📑 THÔNG TIN ĐƠN HÀNG ======\n`;
+        vanBan += `📅 Ngày lập: ${ngay}\n`;
+        vanBan += `👤 Người giao: ${nguoiGiao}\n`;
+        vanBan += `👤 Người nhận: ${nguoiNhan}\n`;
+        vanBan += `==================================\n\n`;
+
+        vanBan += `📊 BẢNG 1: CHI TIẾT GIAO NHẬN & NỢ\n`;
+        const dongPhu = document.querySelectorAll("#bang_giao_nhan tbody tr");
+        dongPhu.forEach((row) => {
+            const tds = row.querySelectorAll("td");
+            if(tds.length > 0) {
+                const stt = tds[0].innerText;
+                const ten = tds[1].innerText;
+                const dvt = tds[2].innerText;
+                const giao = row.querySelector('input[id^="sl_giao_"]').value;
+                const nhan = row.querySelector('input[id^="sl_nhan_"]').value;
+                const no = row.querySelector('td[id^="con_no_"]').innerText;
+                
+                vanBan += `${stt}. ${ten} (${dvt})\n`;
+                vanBan += `   + Số lượng giao: ${giao}\n`;
+                vanBan += `   + Số lượng nhận: ${nhan}\n`;
+                vanBan += `   ❌ Còn nợ: ${no} ${dvt}\n`;
+            }
+        });
+
+        vanBan += `\n💰 BẢNG 2: CHI TIẾT THÀNH TIỀN\n`;
+        const dongChinh = document.querySelectorAll("#bang_san_pham tbody tr");
+        dongChinh.forEach((row) => {
+            const tds = row.querySelectorAll("td");
+            if(tds.length > 0) {
+                const stt = tds[0].innerText;
+                const select = row.querySelector(".chon-san-pham");
+                const ten = select.options[select.selectedIndex].text;
+                const sl = row.querySelector(".so-luong").value;
+                const dvt = row.querySelector(".don-vi-tinh").value;
+                const gia = row.querySelector(".don-gia").value;
+                const thanhTien = row.querySelector(".thanh-tien").innerText;
+                
+                vanBan += `${stt}. ${ten}\n`;
+                vanBan += `   + Số lượng: ${sl} ${dvt} \n   + Đơn giá: ${gia}đ\n`;
+                vanBan += `   👉 Thành tiền: ${thanhTien}đ\n`;
+            }
+        });
+
+        const tongTien = document.getElementById("tong_tien").innerText;
+        vanBan += `\n----------------------------------\n`;
+        vanBan += `💵 TỔNG CỘNG TIỀN: ${tongTien} đ`;
+
+        navigator.clipboard.writeText(vanBan).then(() => {
+            alert("📋 Đã copy dữ liệu! Hãy sang Zalo để dán.");
+        }).catch(err => {
+            const el = document.createElement('textarea');
+            el.value = vanBan;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert("📋 Đã copy dữ liệu! Hãy sang Zalo để dán.");
+        });
     }
 
     window.onload = function() {
