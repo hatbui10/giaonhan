@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý đơn hàng trên điện thoại</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 10px;
+            background-color: #f5f5f5;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 100%;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+        .row-info {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .box-giao-nhan {
+            background-color: #fcf8e3;
+            border: 1px solid #fbeed5;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .box-title {
+            font-weight: bold;
+            color: #c09853;
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        input[type="text"], input[type="date"], select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #fff;
+        }
+        .btn-container {
+            margin-bottom: 15px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 650px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        .bg-giao-nhan th {
+            background-color: #f5f5f5;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row-info">
+        <div class="form-group">
+            <label for="ngay_chon">Ngày chọn lịch:</label>
+            <input type="date" id="ngay_chon">
+        </div>
+    </div>
+
+    <div class="row-info">
+        <div class="form-group">
+            <label for="nguoi_giao">Người giao:</label>
+            <select id="nguoi_giao"></select>
+        </div>
+        <div class="form-group">
+            <label for="nguoi_nhan">Người nhận:</label>
+            <select id="nguoi_nhan"></select>
+        </div>
+    </div>
+
+    <div class="box-giao-nhan">
+        <p class="box-title">📊 Chi tiết giao nhận & Còn nợ</p>
+        <div class="table-responsive">
+            <table id="bang_giao_nhan">
+                <thead>
+                    <tr class="bg-giao-nhan">
+                        <th style="width: 8%;">STT</th>
+                        <th style="width: 30%;">Tên sản phẩm</th>
+                        <th style="width: 12%;">ĐVT</th> <th style="width: 16%;">SL Giao</th>
+                        <th style="width: 16%;">SL Nhận</th>
+                        <th style="width: 18%;">Còn nợ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="btn-container">
+        <button type="button" onclick="themDong()">+ Thêm dòng sản phẩm</button>
+    </div>
+
+    <div class="table-responsive">
+        <table id="bang_san_pham">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">STT</th>
+                    <th style="width: 35%;">Tên sản phẩm (Dropdown)</th>
+                    <th style="width: 12%;">Số lượng</th>
+                    <th style="width: 12%;">ĐVT</th>
+                    <th style="width: 15%;">Đơn giá</th>
+                    <th style="width: 18%;">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="5" class="text-right">Tổng cộng:</td>
+                    <td id="tong_tien" class="text-right">0</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.getElementById('ngay_chon').valueAsDate = new Date();
+
+    const danhSachNguoiGiao = ["-- Chọn người giao --", "Nguyễn Văn A", "Trần Thị B", "Lê Văn C"];
+    const danhSachNguoiNhan = ["-- Chọn người nhận --", "Khách hàng X", "Khách hàng Y", "Đại lý Z"];
+    
+    // Danh sách sản phẩm mặc định (Bạn có thể tự sửa tên, giá, ĐVT ở đây)
+    const danhSachSanPham = [
+        { ten: "-- Chọn sản phẩm --", gia: 0, dvt: "" },
+        { ten: "Sản phẩm A", gia: 50000, dvt: "Cái" },
+        { ten: "Sản phẩm B", gia: 120000, dvt: "Hộp" },
+        { ten: "Sản phẩm C", gia: 250000, dvt: "Kg" },
+        { ten: "Sản phẩm D", gia: 85000, dvt: "Bộ" }
+    ];
+
+    function khoiTaoDanhSachNguoi() {
+        const selectGiao = document.getElementById("nguoi_giao");
+        const selectNhan = document.getElementById("nguoi_nhan");
+        danhSachNguoiGiao.forEach(ten => { let o = document.createElement("option"); o.text = ten; o.value = ten; selectGiao.appendChild(o); });
+        danhSachNguoiNhan.forEach(ten => { let o = document.createElement("option"); o.text = ten; o.value = ten; selectNhan.appendChild(o); });
+    }
+
+    function dinhDangSo(so) { return so.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+    function chuyenThanhSo(chuoi) { return parseFloat(chuoi.replace(/\./g, '')) || 0; }
+
+    function xuLyNhapGia(input) {
+        let giaTri = input.value.replace(/\D/g, "");
+        if (giaTri === "") giaTri = "0";
+        input.value = dinhDangSo(parseInt(giaTri));
+        tinhThanhTien(input);
+    }
+
+    // Hàm đồng bộ cả Tên sản phẩm và ĐVT từ bảng chọn dưới lên bảng hiển thị trên
+    function dongBoThongTinLenTren(selectElement, idDong) {
+        const index = selectElement.value;
+        const oTenTren = document.getElementById(`ten_tren_${idDong}`);
+        const oDvtTren = document.getElementById(`dvt_tren_${idDong}`);
+        
+        if(oTenTren && oDvtTren) {
+            oTenTren.innerText = danhSachSanPham[index].ten;
+            oDvtTren.innerText = danhSachSanPham[index].dvt || "---";
+        }
+    }
+
+    let idDongTudong = 0;
+    function themDong() {
+        idDongTudong++;
+        const tbodyChinh = document.querySelector("#bang_san_pham tbody");
+        const tbodyPhu = document.querySelector("#bang_giao_nhan tbody");
+        const rowCount = tbodyChinh.rows.length + 1;
+
+        let optionsHtml = "";
+        danhSachSanPham.forEach((sp, index) => { optionsHtml += `<option value="${index}">${sp.ten}</option>`; });
+
+        // 1. Thêm dòng bảng tính tiền chính (Dưới)
+        const rowChinh = document.createElement("tr");
+        rowChinh.setAttribute("data-id", idDongTudong);
+        rowChinh.innerHTML = `
+            <td class="stt">${rowCount}</td>
+            <td>
+                <select class="chon-san-pham" onchange="capNhatThongTinTuDropdown(this); dongBoThongTinLenTren(this, ${idDongTudong});">
+                    ${optionsHtml}
+                </select>
+            </td>
+            <td><input type="text" class="so-luong" value="1" style="text-align:center;" oninput="xuLyNhapSoLuong(this, ${idDongTudong})"></td>
+            <td><input type="text" class="don-vi-tinh" placeholder="..." readonly style="text-align:center; background-color: #f1f1f1;"></td>
+            <td><input type="text" class="don-gia" value="0" style="text-align:right;" oninput="xuLyNhapGia(this)"></td>
+            <td class="thanh-tien text-right">0</td>
+        `;
+        tbodyChinh.appendChild(rowChinh);
+
+        // 2. Thêm dòng hộp thông tin giao nhận (Trên)
+        const rowPhu = document.createElement("tr");
+        rowPhu.setAttribute("id", `dong_tren_${idDongTudong}`);
+        rowPhu.innerHTML = `
+            <td>${rowCount}</td>
+            <td id="ten_tren_${idDongTudong}" style="text-align:left; font-weight:bold;">-- Chọn sản phẩm --</td>
+            <td id="dvt_tren_${idDongTudong}" style="color:#555;">---</td>
+            <td><input type="text" id="sl_giao_${idDongTudong}" value="1" style="text-align:center;" oninput="tinhNo(${idDongTudong}); dongBoSoLuongXuongDuoi(${idDongTudong});"></td>
+            <td><input type="text" id="sl_nhan_${idDongTudong}" value="0" style="text-align:center;" oninput="tinhNo(${idDongTudong})"></td>
+            <td id="con_no_${idDongTudong}" style="font-weight:bold; color:red;">1</td>
+        `;
+        tbodyPhu.appendChild(rowPhu);
+    }
+
+    function xuLyNhapSoLuong(input, idDong) {
+        input.value = input.value.replace(/\D/g, "");
+        if (input.value === "") input.value = "1";
+        
+        const slGiaoTren = document.getElementById(`sl_giao_${idDong}`);
+        if(slGiaoTren) slGiaoTren.value = input.value;
+        
+        tinhNo(idDong);
+        tinhThanhTien(input);
+    }
+
+    function dongBoSoLuongXuongDuoi(idDong) {
+        const slGiaoTren = document.getElementById(`sl_giao_${idDong}`);
+        slGiaoTren.value = slGiaoTren.value.replace(/\D/g, "");
+        if (slGiaoTren.value === "") slGiaoTren.value = "0";
+
+        const rowChinh = document.querySelector(`#bang_san_pham tbody tr[data-id="${idDong}"]`);
+        if(rowChinh) {
+            const inputSoLuongDuoi = rowChinh.querySelector(".so-luong");
+            inputSoLuongDuoi.value = slGiaoTren.value;
+            tinhThanhTien(inputSoLuongDuoi);
+        }
+    }
+
+    function tinhNo(idDong) {
+        const giao = parseFloat(document.getElementById(`sl_giao_${idDong}`).value) || 0;
+        const nhan = parseFloat(document.getElementById(`sl_nhan_${idDong}`).value) || 0;
+        const no = giao - nhan;
+        document.getElementById(`con_no_${idDong}`).innerText = no;
+    }
+
+    function capNhatThongTinTuDropdown(selectElement) {
+        const index = selectElement.value;
+        const row = selectElement.closest("tr");
+        const giaSanPham = danhSachSanPham[index].gia;
+        const dvtSanPham = danhSachSanPham[index].dvt;
+        
+        row.querySelector(".don-gia").value = dinhDangSo(giaSanPham);
+        row.querySelector(".don-vi-tinh").value = dvtSanPham;
+        
+        tinhThanhTien(selectElement);
+    }
+
+    function tinhThanhTien(element) {
+        const row = element.closest("tr");
+        const soLuong = parseFloat(row.querySelector(".so-luong").value) || 0;
+        const donGia = chuyenThanhSo(row.querySelector(".don-gia").value);
+        
+        const thanhTien = soLuong * donGia;
+        row.querySelector(".thanh-tien").innerText = dinhDangSo(thanhTien);
+
+        tinhTongCong();
+    }
+
+    function tinhTongCong() {
+        let tong = 0;
+        const rows = document.querySelectorAll("#bang_san_pham tbody tr");
+        rows.forEach(row => {
+            const soLuong = parseFloat(row.querySelector(".so-luong").value) || 0;
+            const donGia = chuyenThanhSo(row.querySelector(".don-gia").value);
+            tong += (soLuong * donGia);
+        });
+        document.getElementById("tong_tien").innerText = dinhDangSo(tong);
+    }
+
+    window.onload = function() {
+        khoiTaoDanhSachNguoi();
+        themDong();
+    };
+</script>
+
+</body>
+</html>
